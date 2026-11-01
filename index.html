@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mes bus">
+<meta name="theme-color" content="#111214">
+<link rel="apple-touch-icon" href="icon.png">
+<title>Mes bus TCL</title>
+<style>
+  :root {
+    --bg: #111214; --card: #1c1d21; --line: #2a2c31; --text: #f2f2f4;
+    --muted: #8b8d94; --accent: #e2001a; --ok: #3ecf8e; --warn: #f5a623;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 24px); }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  h1 { font-size: 22px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  button { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); }
+  button.icon { padding: 6px 10px; }
+  input { font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); color: var(--text); margin: 6px 0 12px; }
+  .card { background: var(--card); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+  .card h2 { font-size: 16px; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .badge { min-width: 38px; text-align: center; font-weight: 700; font-size: 14px; padding: 3px 6px;
+    border-radius: 6px; background: var(--accent); color: #fff; flex: none; }
+  .dir { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .times { display: flex; gap: 8px; flex: none; font-variant-numeric: tabular-nums; }
+  .t { font-weight: 600; }
+  .t.live { color: var(--ok); }
+  .t.theo { color: var(--muted); }
+  .t small { font-weight: 400; font-size: 11px; }
+  .err { color: var(--warn); font-size: 14px; }
+  .empty { color: var(--muted); font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
+  .chip { font-size: 13px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); background: transparent; }
+  .chip.on { background: var(--accent); border-color: var(--accent); }
+  .result { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .result .sub { display: block; }
+  .section { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 8px; }
+  .section:first-child { margin-top: 0; }
+  .hidden { display: none !important; }
+  a { color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- ===== Écran principal ===== -->
+<section id="main">
+  <header>
+    <div>
+      <h1>Mes bus</h1>
+      <div class="sub" id="updated">—</div>
+    </div>
+    <div>
+      <button class="icon" id="refreshBtn" aria-label="Rafraîchir">⟳</button>
+      <button class="icon" id="settingsBtn" aria-label="Réglages">⚙︎</button>
+    </div>
+  </header>
+  <div id="board"></div>
+  <p class="sub">Vert = temps réel · gris = horaire théorique</p>
+</section>
+
+<!-- ===== Réglages ===== -->
+<section id="settings" class="hidden">
+  <header>
+    <h1>Réglages</h1>
+    <button class="primary" id="doneBtn">Terminé</button>
+  </header>
+
+  <div class="card">
+    <h2>Compte data.grandlyon.com</h2>
+    <div class="sub">Stocké uniquement sur cet appareil.</div>
+    <input id="user" placeholder="Identifiant (e-mail)" autocomplete="username" autocapitalize="off">
+    <input id="pass" type="password" placeholder="Mot de passe" autocomplete="current-password">
+    <button id="testBtn">Tester la connexion</button>
+    <span id="testResult" class="sub"></span>
+  </div>
+
+  <div class="card">
+    <h2>Mes arrêts</h2>
+    <div id="favList"></div>
+  </div>
+
+  <div class="card">
+    <h2>Ajouter un arrêt</h2>
+    <input id="search" placeholder="Nom de l'arrêt (ex. Bellecour)" autocomplete="off">
+    <div id="results" class="sub">Tape au moins 3 lettres.</div>
+  </div>
+</section>
+
+<script>
+const API = "https://download.data.grandlyon.com/ws/rdata";
+const REFRESH_MS = 30000;
+const MAX_PASSAGES = 3;
+
+// ---------- Stockage local ----------
+function load(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+let creds = load("tcl_creds", { user: "", pass: "" });
+// favoris : [{ key, ids: [...quais], nom, lignes: [...toutes les lignes], choix: [...lignes affichées, vide = toutes] }]
+// Trajets par défaut. Chaque arrêt ne garde que les quais du bon sens (ids), donc on ne voit pas la direction opposée.
+const DEFAULT_FAVS = [
+  { section: "Aller", key: "aller-1", nom: "Instit. Art Contemporain → Part-Dieu", ids: [47001], lignes: ["TB11", "C23"], choix: ["TB11", "C23"] },
+  { section: "Aller", key: "aller-2", nom: "Part-Dieu Jules Favre → Echangeur du Pérollier", ids: [2206], lignes: ["C6"], choix: ["C6"] },
+  { section: "Retour", key: "retour-1", nom: "Echangeur du Pérollier → Part-Dieu", ids: [47985], lignes: ["C6"], choix: ["C6"] },
+  { section: "Retour", key: "retour-2", nom: "Part-Dieu Jules Favre → Instit. Art Contemporain", ids: [46191], lignes: ["TB11", "C23"], choix: ["TB11", "C23"] },
+];
+let favs = load("tcl_favs_v2", DEFAULT_FAVS);
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- API ----------
+async function fetchPassages(stopId) {
+  const url = `${API}/tcl_sytral.tclpassagearret/all.json?maxfeatures=-1&field=id&value=${encodeURIComponent(stopId)}`;
+  let res;
+  try {
+    res = await fetch(url, {
+      headers: { Authorization: "Basic " + btoa(unescape(encodeURIComponent(`${creds.user}:${creds.pass}`))) },
+    });
+  } catch {
+    // Le serveur renvoie ses 401 sans en-tête CORS : le navigateur ne voit qu'une erreur réseau
+    throw new Error("Connexion impossible : identifiants incorrects, accès au jeu de données non validé, ou pas de réseau");
+  }
+  if (res.status === 401 || res.status === 403) throw new Error("Identifiants refusés ou accès au jeu de données non validé");
+  if (!res.ok) throw new Error(`Erreur ${res.status}`);
+  return (await res.json()).values || [];
+}
+
+let allStops = null;
+async function getStops() {
+  if (allStops) return allStops;
+  const res = await fetch(`${API}/tcl_sytral.tclarret/all.json?maxfeatures=-1`);
+  const json = await res.json();
+  // Regroupe les quais portant le même nom dans la même commune
+  const byKey = new Map();
+  for (const s of json.values) {
+    const key = `${s.nom}|${s.commune || ""}`;
+    if (!byKey.has(key)) byKey.set(key, { key, nom: s.nom, commune: s.commune || "", ids: [], lignes: new Set() });
+    const g = byKey.get(key);
+    g.ids.push(s.id);
+    (s.desserte || "").split(",").map(d => d.split(":")[0]).filter(Boolean).forEach(l => g.lignes.add(l));
+  }
+  allStops = [...byKey.values()].map(g => ({
+    ...g, lignes: [...g.lignes].sort((a, b) => a.localeCompare(b, "fr", { numeric: true })),
+  }));
+  return allStops;
+}
+
+// ---------- Affichage des passages ----------
+function minutesUntil(ts) {
+  const d = new Date(ts.replace(" ", "T"));
+  return Math.round((d - Date.now()) / 60000);
+}
+function fmtTime(p) {
+  const m = minutesUntil(p.heurepassage);
+  const label = m <= 0 ? "Proche" : m < 60 ? `${m}<small> min</small>` : esc(p.heurepassage.slice(11, 16));
+  return `<span class="t ${p.type === "E" ? "live" : "theo"}">${label}</span>`;
+}
+
+async function renderBoard() {
+  const board = $("board");
+  if (!creds.user || !creds.pass) {
+    board.innerHTML = `<div class="card empty">Ajoute ton compte data.grandlyon.com dans les réglages ⚙︎</div>`;
+    return;
+  }
+  if (!favs.length) {
+    board.innerHTML = `<div class="card empty">Aucun arrêt. Ajoute-en dans les réglages ⚙︎</div>`;
+    return;
+  }
+  const results = await Promise.all(favs.map(f =>
+    Promise.all(f.ids.map(fetchPassages)).then(vs => ({ v: vs.flat() }), e => ({ e }))));
+  board.innerHTML = favs.map((f, i) => {
+    const r = results[i];
+    let body;
+    if (r.e) body = `<div class="err">${esc(r.e.message)}</div>`;
+    else {
+      let list = r.v.filter(p => minutesUntil(p.heurepassage) > -1);
+      if (f.choix?.length) list = list.filter(p => f.choix.includes(p.ligne));
+      const groups = {};
+      for (const p of list) (groups[`${p.ligne}|${p.direction}`] ||= []).push(p);
+      const rows = Object.entries(groups)
+        .map(([k, ps]) => {
+          ps.sort((a, b) => a.heurepassage.localeCompare(b.heurepassage));
+          const [ligne, direction] = k.split("|");
+          return { ligne, direction, ps: ps.slice(0, MAX_PASSAGES) };
+        })
+        .sort((a, b) => a.ligne.localeCompare(b.ligne, "fr", { numeric: true }) || a.direction.localeCompare(b.direction));
+      body = rows.length
+        ? rows.map(g => `<div class="row"><span class="badge">${esc(g.ligne)}</span><span class="dir">${esc(g.direction)}</span><span class="times">${g.ps.map(fmtTime).join("")}</span></div>`).join("")
+        : `<div class="empty">Aucun passage prévu</div>`;
+    }
+    const header = f.section && f.section !== favs[i - 1]?.section ? `<h3 class="section">${esc(f.section)}</h3>` : "";
+    return `${header}<div class="card"><h2>${esc(f.nom)}</h2>${body}</div>`;
+  }).join("");
+  $("updated").textContent = "Mis à jour à " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+let timer = null;
+function startAuto() {
+  clearInterval(timer);
+  renderBoard();
+  timer = setInterval(() => { if (!document.hidden) renderBoard(); }, REFRESH_MS);
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !$("main").classList.contains("hidden")) renderBoard(); });
+
+// ---------- Réglages ----------
+function renderFavs() {
+  $("favList").innerHTML = favs.length ? favs.map((f, i) => `
+    <div class="result" style="display:block">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>${esc(f.nom)}</strong>
+        <span>
+          <button class="icon" data-up="${i}" ${i === 0 ? "disabled" : ""}>↑</button>
+          <button class="icon" data-del="${i}">✕</button>
+        </span>
+      </div>
+      <div class="sub">Lignes affichées (aucune sélection = toutes) :</div>
+      <div class="chips">${f.lignes.map(l => `<button class="chip ${f.choix.includes(l) ? "on" : ""}" data-fav="${i}" data-ligne="${esc(l)}">${esc(l)}</button>`).join("")}</div>
+    </div>`).join("") : `<div class="empty">Aucun arrêt pour l'instant.</div>`;
+}
+
+$("favList").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.del) favs.splice(+b.dataset.del, 1);
+  else if (b.dataset.up) { const i = +b.dataset.up; [favs[i - 1], favs[i]] = [favs[i], favs[i - 1]]; }
+  else if (b.dataset.fav) {
+    const f = favs[+b.dataset.fav], l = b.dataset.ligne;
+    f.choix = f.choix.includes(l) ? f.choix.filter(x => x !== l) : [...f.choix, l];
+  }
+  save("tcl_favs_v2", favs); renderFavs();
+});
+
+let searchSeq = 0;
+$("search").addEventListener("input", async e => {
+  const q = e.target.value.trim().toLowerCase();
+  const seq = ++searchSeq;
+  if (q.length < 3) { $("results").textContent = "Tape au moins 3 lettres."; return; }
+  $("results").textContent = "Recherche…";
+  try {
+    const stops = await getStops();
+    if (seq !== searchSeq) return;
+    const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const nq = norm(q);
+    const hits = stops.filter(s => norm(s.nom).includes(nq)).slice(0, 25);
+    $("results").innerHTML = hits.length ? hits.map(s => `
+      <div class="result">
+        <span><strong>${esc(s.nom)}</strong><span class="sub">${esc(s.commune)} · ${esc(s.lignes.join(", "))}</span></span>
+        <button data-add="${esc(s.key)}">${favs.some(f => f.key === s.key) ? "✓" : "Ajouter"}</button>
+      </div>`).join("") : "Aucun arrêt trouvé.";
+  } catch (err) {
+    $("results").textContent = "Impossible de charger la liste des arrêts.";
+  }
+});
+
+$("results").addEventListener("click", e => {
+  const b = e.target.closest("button[data-add]"); if (!b) return;
+  const s = allStops.find(x => x.key === b.dataset.add);
+  if (!s || favs.some(f => f.key === s.key)) return;
+  favs.push({ key: s.key, ids: s.ids, nom: s.nom, lignes: s.lignes, choix: [] });
+  save("tcl_favs_v2", favs); renderFavs(); b.textContent = "✓";
+});
+
+$("testBtn").addEventListener("click", async () => {
+  creds = { user: $("user").value.trim(), pass: $("pass").value };
+  save("tcl_creds", creds);
+  $("testResult").textContent = " Test…";
+  try {
+    await fetchPassages(favs[0]?.ids[0] ?? 10006);
+    $("testResult").textContent = " ✓ Connexion OK";
+  } catch (err) {
+    $("testResult").textContent = " ✕ " + err.message;
+  }
+});
+
+function openSettings() {
+  clearInterval(timer);
+  $("user").value = creds.user; $("pass").value = creds.pass;
+  renderFavs();
+  $("main").classList.add("hidden"); $("settings").classList.remove("hidden");
+}
+function closeSettings() {
+  creds = { user: $("user").value.trim(), pass: $("pass").value };
+  save("tcl_creds", creds);
+  $("settings").classList.add("hidden"); $("main").classList.remove("hidden");
+  startAuto();
+}
+$("settingsBtn").addEventListener("click", openSettings);
+$("doneBtn").addEventListener("click", closeSettings);
+$("refreshBtn").addEventListener("click", renderBoard);
+
+if (!creds.user || !favs.length) openSettings(); else startAuto();
+</script>
+</body>
+</html>
