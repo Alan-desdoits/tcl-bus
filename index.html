@@ -7,80 +7,123 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mes bus">
-<meta name="theme-color" content="#111214">
+<meta name="theme-color" content="#0e0f11">
 <link rel="apple-touch-icon" href="icon.png">
 <title>Mes bus TCL</title>
 <style>
   :root {
-    --bg: #111214; --card: #1c1d21; --line: #2a2c31; --text: #f2f2f4;
-    --muted: #8b8d94; --accent: #e2001a; --ok: #3ecf8e; --warn: #f5a623;
+    --bg: #0e0f11; --card: #1a1b1f; --card2: #222329; --line: #2c2e34; --text: #f4f4f6;
+    --muted: #8d9098; --accent: #e2001a; --ok: #3ecf8e; --warn: #f5a623;
+    --aller: #3b82f6; --retour: #ff8a1f; --autre: #a78bfa;
+    --top: env(safe-area-inset-top, 0px);
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; background: var(--bg); color: var(--text);
     font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  body { padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 24px); }
-  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  h1 { font-size: 22px; margin: 0; }
+  body { padding: 0 16px calc(env(safe-area-inset-bottom) + 28px); }
+
+  /* Barre du haut opaque : elle recouvre la zone du notch pour que rien ne passe dessous en flou */
+  .topbar { position: sticky; top: 0; z-index: 10; background: var(--bg);
+    margin: 0 -16px; padding: calc(var(--top) + 18px) 16px 12px; }
+  .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -.02em; }
   .sub { color: var(--muted); font-size: 13px; }
+  .actions { display: flex; gap: 10px; }
+
   button { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line);
-    border-radius: 10px; padding: 8px 12px; cursor: pointer; }
-  button.primary { background: var(--accent); border-color: var(--accent); }
-  button.icon { padding: 6px 10px; }
-  input { font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
-    background: var(--card); color: var(--text); margin: 6px 0 12px; }
-  .card { background: var(--card); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
-  .card h2 { font-size: 16px; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
-  .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+    border-radius: 12px; padding: 10px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+  .round { width: 48px; height: 48px; border-radius: 50%; padding: 0; display: grid; place-items: center; }
+  .round svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .spin svg { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Onglets Aller / Retour */
+  .tabs { display: flex; gap: 6px; background: var(--card); border-radius: 14px; padding: 4px; margin-top: 14px; }
+  .tab { flex: 1; border: 0; border-radius: 11px; padding: 11px 0; background: transparent; font-weight: 600;
+    color: var(--muted); font-size: 17px; }
+  .tab.on { color: #fff; background: var(--c); }
+  .status { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+  .dot.stale { background: var(--warn); }
+
+  input { font: inherit; width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--card2); color: var(--text); margin: 6px 0 12px; }
+
+  /* Cartes d'étape */
+  .card { background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+  .leg { border-left: 4px solid var(--c); }
+  .leg-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .step { width: 26px; height: 26px; border-radius: 50%; background: var(--c); color: #fff; font-weight: 700;
+    font-size: 14px; display: grid; place-items: center; flex: none; }
+  .leg-title { font-weight: 700; font-size: 17px; line-height: 1.2; }
+  .leg-to { color: var(--muted); font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
   .row:first-of-type { border-top: 0; }
-  .badge { min-width: 38px; text-align: center; font-weight: 700; font-size: 14px; padding: 3px 6px;
-    border-radius: 6px; background: var(--accent); color: #fff; flex: none; }
-  .dir { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .times { display: flex; gap: 8px; flex: none; font-variant-numeric: tabular-nums; }
-  .t { font-weight: 600; }
-  .t.live { color: var(--ok); }
-  .t.theo { color: var(--muted); }
-  .t small { font-weight: 400; font-size: 11px; }
+  .badge { min-width: 46px; text-align: center; font-weight: 800; font-size: 15px; padding: 5px 6px;
+    border-radius: 8px; background: var(--accent); color: #fff; flex: none; }
+  .dir { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); line-height: 1.25; }
+  .times { display: flex; gap: 14px; flex: none; font-variant-numeric: tabular-nums; }
+  .t { text-align: center; min-width: 44px; }
+  .t b { display: block; font-size: 19px; line-height: 1.1; }
+  .t b small { font-size: 12px; font-weight: 500; }
+  .t span { display: block; font-size: 12px; color: var(--muted); }
+  .t.live b { color: var(--ok); }
+  .t.theo b { color: var(--text); opacity: .75; }
+  .t:not(:first-child) b { font-size: 16px; }
   .err { color: var(--warn); font-size: 14px; }
   .empty { color: var(--muted); font-size: 14px; }
+  .legend { margin-top: 4px; }
+
+  /* Réglages */
+  .card h2 { font-size: 17px; margin: 0 0 8px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
-  .chip { font-size: 13px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); background: transparent; }
+  .chip { font-size: 14px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; }
   .chip.on { background: var(--accent); border-color: var(--accent); }
-  .result { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .chip.sec.on { background: var(--c); border-color: var(--c); }
+  .result { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
   .result .sub { display: block; }
-  .section { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 8px; }
-  .section:first-child { margin-top: 0; }
+  .fav { padding: 12px 0; border-top: 1px solid var(--line); }
+  .fav:first-child { border-top: 0; }
+  .fav-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .hidden { display: none !important; }
-  a { color: var(--text); }
 </style>
 </head>
 <body>
 
 <!-- ===== Écran principal ===== -->
 <section id="main">
-  <header>
-    <div>
+  <div class="topbar">
+    <div class="topbar-row">
       <h1>Mes bus</h1>
-      <div class="sub" id="updated">—</div>
+      <div class="actions">
+        <button class="round" id="refreshBtn" aria-label="Actualiser maintenant">
+          <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+        </button>
+        <button class="round" id="settingsBtn" aria-label="Réglages">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </div>
     </div>
-    <div>
-      <button class="icon" id="refreshBtn" aria-label="Rafraîchir">⟳</button>
-      <button class="icon" id="settingsBtn" aria-label="Réglages">⚙︎</button>
-    </div>
-  </header>
+    <div class="tabs" id="tabs"></div>
+    <div class="status sub"><span class="dot" id="dot"></span><span id="updated">Chargement…</span></div>
+  </div>
   <div id="board"></div>
-  <p class="sub">Vert = temps réel · gris = horaire théorique</p>
+  <p class="sub legend">Vert = temps réel · blanc = horaire théorique · actualisation auto toutes les 30 s</p>
 </section>
 
 <!-- ===== Réglages ===== -->
 <section id="settings" class="hidden">
-  <header>
-    <h1>Réglages</h1>
-    <button class="primary" id="doneBtn">Terminé</button>
-  </header>
+  <div class="topbar">
+    <div class="topbar-row">
+      <h1>Réglages</h1>
+      <button class="primary" id="doneBtn">Terminé</button>
+    </div>
+  </div>
 
   <div class="card">
     <h2>Compte data.grandlyon.com</h2>
-    <div class="sub">Stocké uniquement sur cet appareil.</div>
+    <div class="sub">Mot de passe de la plateforme de données (API). Stocké uniquement sur cet appareil.</div>
     <input id="user" placeholder="Identifiant (e-mail)" autocomplete="username" autocapitalize="off">
     <input id="pass" type="password" placeholder="Mot de passe" autocomplete="current-password">
     <button id="testBtn">Tester la connexion</button>
@@ -103,6 +146,12 @@
 const API = "https://download.data.grandlyon.com/ws/rdata";
 const REFRESH_MS = 30000;
 const MAX_PASSAGES = 3;
+const SECTIONS = [
+  { id: "Aller", color: "var(--aller)" },
+  { id: "Retour", color: "var(--retour)" },
+  { id: "Autre", color: "var(--autre)" },
+];
+const sectionColor = id => (SECTIONS.find(s => s.id === id) || SECTIONS[2]).color;
 
 // ---------- Stockage local ----------
 function load(key, fallback) {
@@ -113,7 +162,7 @@ function save(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 let creds = load("tcl_creds", { user: "", pass: "" });
-// favoris : [{ key, ids: [...quais], nom, lignes: [...toutes les lignes], choix: [...lignes affichées, vide = toutes] }]
+// favoris : [{ section, key, ids: [...quais], nom, lignes: [...toutes les lignes], choix: [...lignes affichées, vide = toutes] }]
 // Trajets par défaut. Chaque arrêt ne garde que les quais du bon sens (ids), donc on ne voit pas la direction opposée.
 const DEFAULT_FAVS = [
   { section: "Aller", key: "aller-1", nom: "Instit. Art Contemporain → Part-Dieu", ids: [47001], lignes: ["TB11", "C23"], choix: ["TB11", "C23"] },
@@ -122,6 +171,10 @@ const DEFAULT_FAVS = [
   { section: "Retour", key: "retour-2", nom: "Part-Dieu Jules Favre → Instit. Art Contemporain", ids: [46191], lignes: ["TB11", "C23"], choix: ["TB11", "C23"] },
 ];
 let favs = load("tcl_favs_v2", DEFAULT_FAVS);
+favs.forEach(f => { f.section ||= "Autre"; });
+
+// Onglet affiché : Aller le matin, Retour à partir de 13 h
+let currentTab = new Date().getHours() < 13 ? "Aller" : "Retour";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -164,32 +217,53 @@ async function getStops() {
 }
 
 // ---------- Affichage des passages ----------
-function minutesUntil(ts) {
-  const d = new Date(ts.replace(" ", "T"));
-  return Math.round((d - Date.now()) / 60000);
-}
+const toDate = ts => new Date(ts.replace(" ", "T"));
+const minutesUntil = ts => Math.round((toDate(ts) - Date.now()) / 60000);
+
 function fmtTime(p) {
   const m = minutesUntil(p.heurepassage);
-  const label = m <= 0 ? "Proche" : m < 60 ? `${m}<small> min</small>` : esc(p.heurepassage.slice(11, 16));
-  return `<span class="t ${p.type === "E" ? "live" : "theo"}">${label}</span>`;
+  const big = m <= 0 ? "Proche" : m < 60 ? `${m}<small> min</small>` : esc(p.heurepassage.slice(11, 16));
+  const clock = esc(p.heurepassage.slice(11, 16));
+  return `<div class="t ${p.type === "E" ? "live" : "theo"}"><b>${big}</b><span>${m < 60 ? clock : "&nbsp;"}</span></div>`;
 }
 
-async function renderBoard() {
+function renderTabs() {
+  const used = new Set(favs.map(f => f.section));
+  const tabs = SECTIONS.filter(s => used.has(s.id));
+  if (!tabs.some(t => t.id === currentTab) && tabs.length) currentTab = tabs[0].id;
+  $("tabs").classList.toggle("hidden", tabs.length < 2);
+  $("tabs").innerHTML = tabs.map(t =>
+    `<button class="tab ${t.id === currentTab ? "on" : ""}" style="--c:${t.color}" data-tab="${t.id}">${t.id}</button>`).join("");
+}
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest("[data-tab]"); if (!b) return;
+  currentTab = b.dataset.tab;
+  renderTabs(); drawBoard();
+});
+
+// Dernières données reçues, redessinées toutes les 10 s pour que les minutes restent justes entre deux appels
+let lastResults = null, lastFetch = 0, loading = false;
+
+function drawBoard() {
   const board = $("board");
   if (!creds.user || !creds.pass) {
-    board.innerHTML = `<div class="card empty">Ajoute ton compte data.grandlyon.com dans les réglages ⚙︎</div>`;
+    board.innerHTML = `<div class="card empty">Ajoute ton compte data.grandlyon.com dans les réglages.</div>`;
     return;
   }
   if (!favs.length) {
-    board.innerHTML = `<div class="card empty">Aucun arrêt. Ajoute-en dans les réglages ⚙︎</div>`;
+    board.innerHTML = `<div class="card empty">Aucun arrêt. Ajoute-en dans les réglages.</div>`;
     return;
   }
-  const results = await Promise.all(favs.map(f =>
-    Promise.all(f.ids.map(fetchPassages)).then(vs => ({ v: vs.flat() }), e => ({ e }))));
+  if (!lastResults) { board.innerHTML = ""; return; }
+  const color = sectionColor(currentTab);
+  let step = 0;
   board.innerHTML = favs.map((f, i) => {
-    const r = results[i];
+    if (f.section !== currentTab) return "";
+    step++;
+    const r = lastResults[i];
     let body;
-    if (r.e) body = `<div class="err">${esc(r.e.message)}</div>`;
+    if (!r) body = `<div class="empty">Chargement…</div>`;
+    else if (r.e) body = `<div class="err">${esc(r.e.message)}</div>`;
     else {
       let list = r.v.filter(p => minutesUntil(p.heurepassage) > -1);
       if (f.choix?.length) list = list.filter(p => f.choix.includes(p.ligne));
@@ -201,36 +275,67 @@ async function renderBoard() {
           const [ligne, direction] = k.split("|");
           return { ligne, direction, ps: ps.slice(0, MAX_PASSAGES) };
         })
-        .sort((a, b) => a.ligne.localeCompare(b.ligne, "fr", { numeric: true }) || a.direction.localeCompare(b.direction));
+        // Le bus qui arrive le plus tôt en premier
+        .sort((a, b) => a.ps[0].heurepassage.localeCompare(b.ps[0].heurepassage));
       body = rows.length
-        ? rows.map(g => `<div class="row"><span class="badge">${esc(g.ligne)}</span><span class="dir">${esc(g.direction)}</span><span class="times">${g.ps.map(fmtTime).join("")}</span></div>`).join("")
+        ? rows.map(g => `<div class="row"><span class="badge">${esc(g.ligne)}</span><span class="dir">→ ${esc(g.direction)}</span><span class="times">${g.ps.map(fmtTime).join("")}</span></div>`).join("")
         : `<div class="empty">Aucun passage prévu</div>`;
     }
-    const header = f.section && f.section !== favs[i - 1]?.section ? `<h3 class="section">${esc(f.section)}</h3>` : "";
-    return `${header}<div class="card"><h2>${esc(f.nom)}</h2>${body}</div>`;
+    const [from, to] = f.nom.split(" → ");
+    return `<div class="card leg" style="--c:${color}">
+      <div class="leg-head"><span class="step">${step}</span>
+        <div><div class="leg-title">${esc(from)}</div>${to ? `<div class="leg-to">vers ${esc(to)}</div>` : ""}</div>
+      </div>${body}</div>`;
   }).join("");
-  $("updated").textContent = "Mis à jour à " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-let timer = null;
-function startAuto() {
-  clearInterval(timer);
-  renderBoard();
-  timer = setInterval(() => { if (!document.hidden) renderBoard(); }, REFRESH_MS);
+function drawStatus() {
+  if (!lastFetch) return;
+  const s = Math.round((Date.now() - lastFetch) / 1000);
+  const ago = s < 5 ? "à l'instant" : s < 60 ? `il y a ${s} s` : `il y a ${Math.floor(s / 60)} min`;
+  $("updated").textContent = loading ? "Actualisation…" : `Actualisé ${ago}`;
+  $("dot").classList.toggle("stale", s > 90);
 }
-document.addEventListener("visibilitychange", () => { if (!document.hidden && !$("main").classList.contains("hidden")) renderBoard(); });
+
+async function refresh() {
+  if (loading || !creds.user || !creds.pass || !favs.length) { drawBoard(); return; }
+  loading = true;
+  $("refreshBtn").classList.add("spin");
+  drawStatus();
+  lastResults = await Promise.all(favs.map(f =>
+    Promise.all(f.ids.map(fetchPassages)).then(vs => ({ v: vs.flat() }), e => ({ e }))));
+  lastFetch = Date.now();
+  loading = false;
+  $("refreshBtn").classList.remove("spin");
+  drawBoard(); drawStatus();
+}
+
+let timer = null, tick = null;
+function startAuto() {
+  clearInterval(timer); clearInterval(tick);
+  renderTabs();
+  lastResults = null; drawBoard();
+  refresh();
+  timer = setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
+  tick = setInterval(() => { if (!document.hidden) { drawBoard(); drawStatus(); } }, 10000);
+}
+function stopAuto() { clearInterval(timer); clearInterval(tick); }
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && !$("main").classList.contains("hidden")) refresh();
+});
 
 // ---------- Réglages ----------
 function renderFavs() {
   $("favList").innerHTML = favs.length ? favs.map((f, i) => `
-    <div class="result" style="display:block">
-      <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="fav">
+      <div class="fav-head">
         <strong>${esc(f.nom)}</strong>
-        <span>
-          <button class="icon" data-up="${i}" ${i === 0 ? "disabled" : ""}>↑</button>
-          <button class="icon" data-del="${i}">✕</button>
+        <span style="display:flex;gap:6px;flex:none">
+          <button data-up="${i}" ${i === 0 ? "disabled" : ""} aria-label="Monter">↑</button>
+          <button data-del="${i}" aria-label="Supprimer">✕</button>
         </span>
       </div>
+      <div class="chips">${SECTIONS.map(s => `<button class="chip sec ${f.section === s.id ? "on" : ""}" style="--c:${s.color}" data-fav="${i}" data-sec="${s.id}">${s.id}</button>`).join("")}</div>
       <div class="sub">Lignes affichées (aucune sélection = toutes) :</div>
       <div class="chips">${f.lignes.map(l => `<button class="chip ${f.choix.includes(l) ? "on" : ""}" data-fav="${i}" data-ligne="${esc(l)}">${esc(l)}</button>`).join("")}</div>
     </div>`).join("") : `<div class="empty">Aucun arrêt pour l'instant.</div>`;
@@ -240,7 +345,8 @@ $("favList").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.del) favs.splice(+b.dataset.del, 1);
   else if (b.dataset.up) { const i = +b.dataset.up; [favs[i - 1], favs[i]] = [favs[i], favs[i - 1]]; }
-  else if (b.dataset.fav) {
+  else if (b.dataset.sec) favs[+b.dataset.fav].section = b.dataset.sec;
+  else if (b.dataset.ligne) {
     const f = favs[+b.dataset.fav], l = b.dataset.ligne;
     f.choix = f.choix.includes(l) ? f.choix.filter(x => x !== l) : [...f.choix, l];
   }
@@ -273,7 +379,7 @@ $("results").addEventListener("click", e => {
   const b = e.target.closest("button[data-add]"); if (!b) return;
   const s = allStops.find(x => x.key === b.dataset.add);
   if (!s || favs.some(f => f.key === s.key)) return;
-  favs.push({ key: s.key, ids: s.ids, nom: s.nom, lignes: s.lignes, choix: [] });
+  favs.push({ section: currentTab, key: s.key, ids: s.ids, nom: s.nom, lignes: s.lignes, choix: [] });
   save("tcl_favs_v2", favs); renderFavs(); b.textContent = "✓";
 });
 
@@ -290,20 +396,22 @@ $("testBtn").addEventListener("click", async () => {
 });
 
 function openSettings() {
-  clearInterval(timer);
+  stopAuto();
   $("user").value = creds.user; $("pass").value = creds.pass;
   renderFavs();
   $("main").classList.add("hidden"); $("settings").classList.remove("hidden");
+  window.scrollTo(0, 0);
 }
 function closeSettings() {
   creds = { user: $("user").value.trim(), pass: $("pass").value };
   save("tcl_creds", creds);
   $("settings").classList.add("hidden"); $("main").classList.remove("hidden");
+  window.scrollTo(0, 0);
   startAuto();
 }
 $("settingsBtn").addEventListener("click", openSettings);
 $("doneBtn").addEventListener("click", closeSettings);
-$("refreshBtn").addEventListener("click", renderBoard);
+$("refreshBtn").addEventListener("click", refresh);
 
 if (!creds.user || !favs.length) openSettings(); else startAuto();
 </script>
