@@ -7,125 +7,89 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mes bus">
-<meta name="theme-color" content="#07060d">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#16120e">
 <link rel="apple-touch-icon" href="icon.png">
 <title>Mes bus TCL</title>
 <style>
   :root {
-    --bg: #07060d; --card: rgba(18, 14, 34, .85); --card2: #150f28; --line: rgba(160, 120, 255, .18);
-    --text: #ece6ff; --muted: #8a80ad; --accent: #ff2d6f; --ok: #39ff9f; --warn: #ffb020;
-    --aller: #22e4ff; --retour: #ff3df2; --autre: #b48cff;
-    --amber: #ffb547;
+    --bg: #16120e; --card: #221b15; --card2: #2b231b; --line: #362b21; --text: #f6ede2;
+    --muted: #a8977f; --accent: #e2001a; --ok: #9ad48a; --warn: #ff7a59;
+    --aller: #f2a33a; --retour: #e5684a; --autre: #c49a6c;
     --top: env(safe-area-inset-top, 0px);
-    --digits: "VT323", ui-monospace, monospace;
-    --display: "Orbitron", -apple-system, sans-serif;
+    --font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; background: var(--bg); color: var(--text);
-    font: 16px/1.4 "Share Tech Mono", ui-monospace, monospace; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 var(--font); }
   body { padding: 0 16px calc(env(safe-area-inset-bottom) + 28px); min-height: 100vh;
-    background:
-      radial-gradient(120% 60% at 50% -10%, rgba(140, 60, 255, .28), transparent 60%),
-      radial-gradient(80% 50% at 100% 100%, rgba(255, 45, 160, .14), transparent 60%),
-      var(--bg);
-    background-attachment: fixed; }
-  /* Grille rétro en perspective en bas d'écran + lignes de balayage façon vieil écran */
-  body::before { content: ""; position: fixed; left: -20%; right: -20%; bottom: 0; height: 40vh; pointer-events: none; z-index: -1;
-    background:
-      linear-gradient(rgba(255, 61, 242, .25) 1px, transparent 1px) 0 0 / 100% 26px,
-      linear-gradient(90deg, rgba(34, 228, 255, .2) 1px, transparent 1px) 0 0 / 38px 100%;
-    transform: perspective(260px) rotateX(55deg); transform-origin: bottom;
-    -webkit-mask-image: linear-gradient(transparent, #000 75%); mask-image: linear-gradient(transparent, #000 75%); }
-  body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
-    background: repeating-linear-gradient(rgba(0, 0, 0, .16) 0 1px, transparent 1px 3px); }
+    background: radial-gradient(110% 50% at 50% -5%, rgba(242, 163, 58, .10), transparent 60%), var(--bg); background-attachment: fixed; }
 
   /* Barre du haut opaque : elle recouvre la zone du notch pour que rien ne passe dessous en flou */
   .topbar { position: sticky; top: 0; z-index: 10; background: var(--bg);
-    margin: 0 -16px; padding: calc(var(--top) + 18px) 16px 14px;
-    box-shadow: 0 10px 20px -10px var(--bg); }
-  .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .brand { display: flex; flex-direction: column; gap: 2px; }
-  h1 { font-family: var(--display); font-weight: 900; font-size: 18px; margin: 0; letter-spacing: .16em;
-    text-transform: uppercase; color: #fff;
-    text-shadow: 0 0 6px var(--accent), 0 0 16px var(--accent), 0 0 30px rgba(255, 45, 111, .6); }
-  .clock { font-family: var(--digits); font-size: 52px; line-height: .85; color: var(--amber); letter-spacing: .03em;
-    text-shadow: 0 0 6px rgba(255, 181, 71, .9), 0 0 22px rgba(255, 140, 30, .6); }
-  .clock .colon { animation: blink 1s steps(1) infinite; }
-  @keyframes blink { 50% { opacity: .15; } }
+    margin: 0 -16px; padding: calc(var(--top) + 16px) 16px 10px; }
+  .topbar-row { display: flex; align-items: center; gap: 12px; }
+  h1 { font-size: 26px; margin: 0; letter-spacing: -.02em; flex: 1; }
+  .clock { font-size: 22px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
   .sub { color: var(--muted); font-size: 13px; }
-  .actions { display: flex; gap: 10px; }
 
-  button { font: inherit; color: var(--text); background: var(--card2); border: 1px solid var(--line);
+  button { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line);
     border-radius: 12px; padding: 10px 14px; cursor: pointer; }
-  button.primary { background: transparent; border: 2px solid var(--accent); color: #fff; font-family: var(--display);
-    font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px;
-    box-shadow: 0 0 10px rgba(255, 45, 111, .6), inset 0 0 10px rgba(255, 45, 111, .4); text-shadow: 0 0 6px var(--accent); }
-  .round { width: 50px; height: 50px; border-radius: 50%; padding: 0; display: grid; place-items: center;
-    background: rgba(20, 14, 40, .9); border: 2px solid rgba(34, 228, 255, .75); color: var(--aller);
-    box-shadow: 0 0 10px rgba(34, 228, 255, .45), inset 0 0 10px rgba(34, 228, 255, .25); }
-  .round:active { transform: scale(.94); }
-  .round svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-    filter: drop-shadow(0 0 4px currentColor); }
+  button.primary { background: var(--aller); border-color: var(--aller); color: #1d140a; font-weight: 700; }
+  .round { width: 46px; height: 46px; border-radius: 50%; padding: 0; display: grid; place-items: center; flex: none; }
+  .round svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* Onglets Aller / Retour */
-  .tabs { display: flex; gap: 10px; margin-top: 16px; }
-  .tab { flex: 1; border-radius: 12px; padding: 12px 0; background: rgba(20, 14, 40, .7);
-    border: 2px solid color-mix(in srgb, var(--c) 30%, transparent);
-    font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: .16em; text-transform: uppercase;
-    color: color-mix(in srgb, var(--c) 45%, #666); }
-  .tab.on { color: #fff; border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent);
-    text-shadow: 0 0 6px var(--c), 0 0 16px var(--c);
-    box-shadow: 0 0 14px color-mix(in srgb, var(--c) 70%, transparent), inset 0 0 14px color-mix(in srgb, var(--c) 35%, transparent); }
-  .status { display: flex; align-items: center; gap: 8px; margin-top: 12px; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; box-shadow: 0 0 8px var(--ok);
-    animation: pulse 2s ease-in-out infinite; }
-  .dot.stale { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
-  @keyframes pulse { 50% { opacity: .35; } }
+  .tabs { display: flex; gap: 6px; background: var(--card); border-radius: 16px; padding: 4px; margin-top: 14px; }
+  .tab { flex: 1; border: 0; border-radius: 12px; padding: 11px 0; background: transparent; font-weight: 700;
+    color: var(--muted); font-size: 17px; }
+  .tab.on { color: #1d140a; background: var(--c); }
+  .status { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 8px; font-size: 12px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+  .dot.stale { background: var(--warn); }
 
   input { font: inherit; width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line);
     background: var(--card2); color: var(--text); margin: 6px 0 12px; }
-  input:focus { outline: none; border-color: var(--aller); box-shadow: 0 0 10px rgba(34, 228, 255, .4); }
 
-  /* Cartes d'étape */
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 14px; }
-  .leg { border: 1.5px solid color-mix(in srgb, var(--c) 65%, transparent);
-    box-shadow: 0 0 16px color-mix(in srgb, var(--c) 28%, transparent), inset 0 0 24px color-mix(in srgb, var(--c) 8%, transparent); }
-  .leg-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .step { width: 32px; height: 32px; border-radius: 8px; border: 2px solid var(--c); color: var(--c); font-family: var(--digits);
-    font-size: 26px; display: grid; place-items: center; flex: none; text-shadow: 0 0 8px var(--c);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--c) 60%, transparent); }
-  .leg-title { font-family: var(--display); font-weight: 700; font-size: 14px; line-height: 1.3; letter-spacing: .04em; color: #fff; }
-  .leg-to { color: var(--c); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 0 6px var(--c); }
-  .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px dashed var(--line); }
-  .row:first-of-type { border-top: 0; }
-  .badge { min-width: 50px; text-align: center; font-family: var(--display); font-weight: 900; font-size: 13px; padding: 6px;
-    border-radius: 8px; border: 2px solid var(--accent); color: #fff; flex: none; background: rgba(255, 45, 111, .12);
-    text-shadow: 0 0 6px var(--accent); box-shadow: 0 0 8px rgba(255, 45, 111, .5); }
-  .dir { flex: 1; min-width: 0; font-size: 12px; color: var(--muted); line-height: 1.25; }
-  .times { display: flex; gap: 12px; flex: none; }
-  .t { text-align: center; min-width: 46px; }
-  .t b { display: block; font-family: var(--digits); font-weight: 400; font-size: 36px; line-height: .9; }
-  .t b small { font-size: 17px; }
-  .t span { display: block; font-family: var(--digits); font-size: 18px; color: var(--muted); }
-  .t.live b { color: var(--ok); text-shadow: 0 0 6px var(--ok), 0 0 16px rgba(57, 255, 159, .6); }
-  .t.theo b { color: var(--amber); text-shadow: 0 0 6px rgba(255, 181, 71, .6); }
-  .t:not(:first-child) b { font-size: 27px; }
+  /* Carte d'étape */
+  .card { background: var(--card); border-radius: 20px; padding: 14px 16px; margin-bottom: 12px; }
+  .leg { border-top: 3px solid var(--c); }
+  .leg-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .step { color: var(--c); font-weight: 800; font-size: 15px; flex: none; }
+  .leg-title { font-weight: 700; font-size: 16px; line-height: 1.25; }
+  .leg-title span { color: var(--muted); font-weight: 500; }
+  .badge { min-width: 46px; text-align: center; font-weight: 800; font-size: 15px; padding: 5px 7px;
+    border-radius: 9px; background: var(--accent); color: #fff; flex: none; }
+
+  /* Prochain départ en grand : ligne, compte à rebours, heure de passage */
+  .hero { display: flex; align-items: center; gap: 12px; }
+  .big { font-size: 46px; font-weight: 800; line-height: .95; letter-spacing: -.03em; color: var(--ok); font-variant-numeric: tabular-nums; }
+  .big small { font-size: 17px; font-weight: 600; letter-spacing: 0; margin-left: 3px; opacity: .8; }
+  .at { margin-left: auto; text-align: right; font-size: 12px; color: var(--muted); line-height: 1.2; }
+  .at b { display: block; font-size: 22px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .hero.urgent .big, .hero.urgent .at em { color: var(--warn); }
+  .at em { font-style: normal; font-weight: 700; }
+
+  /* Jauge : se remplit à mesure que le bus approche (sur 20 min) */
+  .meter { height: 5px; border-radius: 5px; background: var(--line); margin: 12px 0; overflow: hidden; }
+  .meter i { display: block; height: 100%; border-radius: 5px; background: var(--ok); transition: width .6s; }
+  .hero.urgent + .meter i { background: var(--warn); }
+
+  /* Départs suivants, toutes lignes confondues, dans l'ordre */
+  .next { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .nx { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 14px; background: var(--card2); }
+  .nx .badge { font-size: 11px; min-width: 34px; padding: 2px 5px; border-radius: 6px; }
+  .nx b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .nx b small { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .nx span { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .err { color: var(--warn); font-size: 14px; }
   .empty { color: var(--muted); font-size: 14px; }
-  .legend { margin-top: 6px; font-size: 12px; text-align: center; }
-  .legend .g { color: var(--ok); text-shadow: 0 0 6px var(--ok); }
-  .legend .a { color: var(--amber); text-shadow: 0 0 6px var(--amber); }
+  .legend { margin-top: 4px; text-align: center; }
 
   /* Réglages */
-  .card h2 { font-family: var(--display); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; margin: 0 0 8px;
-    color: var(--aller); text-shadow: 0 0 8px rgba(34, 228, 255, .7); }
+  .card h2 { font-size: 17px; margin: 0 0 8px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
   .chip { font-size: 14px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; }
-  .chip.on { border-color: var(--accent); box-shadow: 0 0 8px rgba(255, 45, 111, .6); text-shadow: 0 0 6px var(--accent); }
-  .chip.sec.on { border-color: var(--c); box-shadow: 0 0 8px var(--c); text-shadow: 0 0 6px var(--c); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.sec.on { background: var(--c); border-color: var(--c); color: #1d140a; }
   .result { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
   .result .sub { display: block; }
   .fav { padding: 12px 0; border-top: 1px solid var(--line); }
@@ -140,21 +104,17 @@
 <section id="main">
   <div class="topbar">
     <div class="topbar-row">
-      <div class="brand">
-        <h1>Mes bus</h1>
-        <div class="clock" id="clock">--:--</div>
-      </div>
-      <div class="actions">
-        <button class="round" id="settingsBtn" aria-label="Réglages">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-        </button>
-      </div>
+      <h1>Mes bus</h1>
+      <span class="clock" id="clock">--:--</span>
+      <button class="round" id="settingsBtn" aria-label="Réglages">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
     </div>
     <div class="tabs" id="tabs"></div>
     <div class="status sub"><span class="dot" id="dot"></span><span id="updated">Chargement…</span></div>
   </div>
   <div id="board"></div>
-  <p class="sub legend"><span class="g">● temps réel</span> · <span class="a">● théorique</span> · auto toutes les 15 s</p>
+  <p class="sub legend">Temps réel uniquement · actualisation auto toutes les 15 s</p>
 </section>
 
 <!-- ===== Réglages ===== -->
@@ -190,7 +150,8 @@
 <script>
 const API = "https://download.data.grandlyon.com/ws/rdata";
 const REFRESH_MS = 15000;
-const MAX_PASSAGES = 3;
+const NEXT_COUNT = 3;   // départs affichés après le prochain
+const URGENT_MIN = 3;   // en dessous : compte à rebours en orange
 const SECTIONS = [
   { id: "Aller", color: "var(--aller)" },
   { id: "Retour", color: "var(--retour)" },
@@ -218,8 +179,8 @@ const DEFAULT_FAVS = [
 let favs = load("tcl_favs_v2", DEFAULT_FAVS);
 favs.forEach(f => { f.section ||= "Autre"; });
 
-// Onglet affiché : Aller le matin, Retour à partir de 13 h
-let currentTab = new Date().getHours() < 13 ? "Aller" : "Retour";
+// Onglet affiché : Aller avant midi, Retour à partir de 12 h
+let currentTab = new Date().getHours() < 12 ? "Aller" : "Retour";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -264,13 +225,7 @@ async function getStops() {
 // ---------- Affichage des passages ----------
 const toDate = ts => new Date(ts.replace(" ", "T"));
 const minutesUntil = ts => Math.round((toDate(ts) - Date.now()) / 60000);
-
-function fmtTime(p) {
-  const m = minutesUntil(p.heurepassage);
-  const big = m <= 0 ? "Proche" : m < 60 ? `${m}<small> min</small>` : esc(p.heurepassage.slice(11, 16));
-  const clock = esc(p.heurepassage.slice(11, 16));
-  return `<div class="t ${p.type === "E" ? "live" : "theo"}"><b>${big}</b><span>${m < 60 ? clock : "&nbsp;"}</span></div>`;
-}
+const clockOf = ts => esc(ts.slice(11, 16));
 
 function renderTabs() {
   const used = new Set(favs.map(f => f.section));
@@ -286,7 +241,35 @@ $("tabs").addEventListener("click", e => {
   renderTabs(); drawBoard();
 });
 
-// Dernières données reçues, redessinées toutes les 5 s pour que les minutes et « il y a X s » restent justes entre deux appels
+// Prochain bus en grand, puis les suivants toutes lignes confondues (ils vont au même endroit)
+function legBody(f, r) {
+  if (!r) return `<div class="empty">Chargement…</div>`;
+  if (r.e) return `<div class="err">${esc(r.e.message)}</div>`;
+  // Seulement les passages suivis en temps réel (type "E"), pas les horaires théoriques
+  const deps = r.v
+    .filter(p => p.type === "E" && minutesUntil(p.heurepassage) > -1)
+    .filter(p => !f.choix?.length || f.choix.includes(p.ligne))
+    .sort((a, b) => a.heurepassage.localeCompare(b.heurepassage));
+  if (!deps.length) return `<div class="empty">Aucun bus en approche pour l'instant</div>`;
+
+  const [first, ...rest] = deps;
+  const m = minutesUntil(first.heurepassage);
+  const urgent = m <= URGENT_MIN;
+  const fill = Math.max(6, Math.min(100, 100 - m * 5));
+  const big = m <= 0 ? "Proche" : `${m}<small>min</small>`;
+  return `
+    <div class="hero ${urgent ? "urgent" : ""}">
+      <span class="badge">${esc(first.ligne)}</span>
+      <span class="big">${big}</span>
+      <span class="at">${urgent ? "<em>Dépêche-toi</em>" : "passage"}<b>${clockOf(first.heurepassage)}</b></span>
+    </div>
+    <div class="meter"><i style="width:${fill}%"></i></div>
+    ${rest.length ? `<div class="next">${rest.slice(0, NEXT_COUNT).map(p => `
+      <div class="nx"><span class="badge">${esc(p.ligne)}</span><b>${Math.max(0, minutesUntil(p.heurepassage))}<small> min</small></b><span>${clockOf(p.heurepassage)}</span></div>`).join("")}
+    </div>` : ""}`;
+}
+
+// Dernières données reçues, redessinées toutes les 5 s pour que les minutes restent justes entre deux appels
 let lastResults = null, lastFetch = 0, loading = false;
 
 function drawBoard() {
@@ -299,38 +282,16 @@ function drawBoard() {
     board.innerHTML = `<div class="card empty">Aucun arrêt. Ajoute-en dans les réglages.</div>`;
     return;
   }
-  if (!lastResults) { board.innerHTML = ""; return; }
   const color = sectionColor(currentTab);
   let step = 0;
   board.innerHTML = favs.map((f, i) => {
     if (f.section !== currentTab) return "";
     step++;
-    const r = lastResults[i];
-    let body;
-    if (!r) body = `<div class="empty">Chargement…</div>`;
-    else if (r.e) body = `<div class="err">${esc(r.e.message)}</div>`;
-    else {
-      let list = r.v.filter(p => minutesUntil(p.heurepassage) > -1);
-      if (f.choix?.length) list = list.filter(p => f.choix.includes(p.ligne));
-      const groups = {};
-      for (const p of list) (groups[`${p.ligne}|${p.direction}`] ||= []).push(p);
-      const rows = Object.entries(groups)
-        .map(([k, ps]) => {
-          ps.sort((a, b) => a.heurepassage.localeCompare(b.heurepassage));
-          const [ligne, direction] = k.split("|");
-          return { ligne, direction, ps: ps.slice(0, MAX_PASSAGES) };
-        })
-        // Le bus qui arrive le plus tôt en premier
-        .sort((a, b) => a.ps[0].heurepassage.localeCompare(b.ps[0].heurepassage));
-      body = rows.length
-        ? rows.map(g => `<div class="row"><span class="badge">${esc(g.ligne)}</span><span class="dir">→ ${esc(g.direction)}</span><span class="times">${g.ps.map(fmtTime).join("")}</span></div>`).join("")
-        : `<div class="empty">Aucun passage prévu</div>`;
-    }
     const [from, to] = f.nom.split(" → ");
     return `<div class="card leg" style="--c:${color}">
       <div class="leg-head"><span class="step">${step}</span>
-        <div><div class="leg-title">${esc(from)}</div>${to ? `<div class="leg-to">vers ${esc(to)}</div>` : ""}</div>
-      </div>${body}</div>`;
+        <div class="leg-title">${esc(from)}${to ? ` <span>→ ${esc(to)}</span>` : ""}</div>
+      </div>${legBody(f, lastResults?.[i])}</div>`;
   }).join("");
 }
 
@@ -339,7 +300,7 @@ function drawStatus() {
   const s = Math.round((Date.now() - lastFetch) / 1000);
   const ago = s < 5 ? "à l'instant" : s < 60 ? `il y a ${s} s` : `il y a ${Math.floor(s / 60)} min`;
   $("updated").textContent = loading ? "Actualisation…" : `Actualisé ${ago}`;
-  $("dot").classList.toggle("stale", s > 90);
+  $("dot").classList.toggle("stale", s > 60);
 }
 
 async function refresh() {
@@ -455,13 +416,12 @@ function closeSettings() {
 $("settingsBtn").addEventListener("click", openSettings);
 $("doneBtn").addEventListener("click", closeSettings);
 
-// Horloge façon réveil à LED
 function drawClock() {
   const d = new Date(), pad = n => String(n).padStart(2, "0");
-  $("clock").innerHTML = `${pad(d.getHours())}<span class="colon">:</span>${pad(d.getMinutes())}`;
+  $("clock").textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 drawClock();
-setInterval(drawClock, 1000);
+setInterval(drawClock, 5000);
 
 if (!creds.user || !favs.length) openSettings(); else startAuto();
 </script>
