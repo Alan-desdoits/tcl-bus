@@ -7,79 +7,67 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mes bus">
-<meta name="theme-color" content="#16120e">
+<meta name="theme-color" content="#15120f">
 <link rel="apple-touch-icon" href="icon.png">
 <title>Mes bus TCL</title>
 <style>
   :root {
-    --bg: #16120e; --card: #221b15; --card2: #2b231b; --line: #362b21; --text: #f6ede2;
-    --muted: #a8977f; --accent: #e2001a; --ok: #9ad48a; --warn: #ff7a59;
-    --aller: #f2a33a; --retour: #e5684a; --autre: #c49a6c;
+    --bg: #15120f; --card: #201c18; --card2: #2a2520; --line: #332d27; --text: #f4ede4;
+    --muted: #9b9086; --accent: #e2001a; --ok: #5fd39a; --warn: #ff9f43;
+    --aller: #f0a640; --retour: #e8735a; --autre: #c49a6c;
     --top: env(safe-area-inset-top, 0px);
     --font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 var(--font); }
-  body { padding: 0 16px calc(env(safe-area-inset-bottom) + 28px); min-height: 100vh;
-    background: radial-gradient(110% 50% at 50% -5%, rgba(242, 163, 58, .10), transparent 60%), var(--bg); background-attachment: fixed; }
+  body { padding: 0 16px calc(env(safe-area-inset-bottom) + 28px); min-height: 100vh; }
 
   /* Barre du haut opaque : elle recouvre la zone du notch pour que rien ne passe dessous en flou */
   .topbar { position: sticky; top: 0; z-index: 10; background: var(--bg);
     margin: 0 -16px; padding: calc(var(--top) + 16px) 16px 10px; }
-  .topbar-row { display: flex; align-items: center; gap: 12px; }
+  .topbar-row { display: flex; align-items: center; gap: 14px; }
   h1 { font-size: 26px; margin: 0; letter-spacing: -.02em; flex: 1; }
-  .clock { font-size: 22px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
   .sub { color: var(--muted); font-size: 13px; }
 
   button { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line);
     border-radius: 12px; padding: 10px 14px; cursor: pointer; }
   button.primary { background: var(--aller); border-color: var(--aller); color: #1d140a; font-weight: 700; }
-  .round { width: 46px; height: 46px; border-radius: 50%; padding: 0; display: grid; place-items: center; flex: none; }
-  .round svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .round { width: 44px; height: 44px; border-radius: 50%; padding: 0; display: grid; place-items: center; flex: none; }
+  .round svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* Onglets Aller / Retour */
-  .tabs { display: flex; gap: 6px; background: var(--card); border-radius: 16px; padding: 4px; margin-top: 14px; }
-  .tab { flex: 1; border: 0; border-radius: 12px; padding: 11px 0; background: transparent; font-weight: 700;
-    color: var(--muted); font-size: 17px; }
-  .tab.on { color: #1d140a; background: var(--c); }
-  .status { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 8px; font-size: 12px; }
+  /* Sélecteur Aller / Retour discret : mot actif en blanc, souligné de la couleur de la section */
+  .tabs { display: flex; align-items: baseline; gap: 14px; }
+  .tab { border: 0; background: none; padding: 6px 0 3px; border-radius: 0; font-size: 15px; font-weight: 600; color: var(--muted); opacity: .75; }
+  .tab.on { color: var(--text); opacity: 1; box-shadow: inset 0 -2px 0 var(--c); }
+  .status { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 12px; }
+  .status > span { display: flex; align-items: center; gap: 6px; }
+  .clock { font-variant-numeric: tabular-nums; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
   .dot.stale { background: var(--warn); }
 
   input { font: inherit; width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line);
     background: var(--card2); color: var(--text); margin: 6px 0 12px; }
 
-  /* Carte d'étape */
-  .card { background: var(--card); border-radius: 20px; padding: 14px 16px; margin-bottom: 12px; }
-  .leg { border-top: 3px solid var(--c); }
-  .leg-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
-  .step { color: var(--c); font-weight: 800; font-size: 15px; flex: none; }
-  .leg-title { font-weight: 700; font-size: 16px; line-height: 1.25; }
-  .leg-title span { color: var(--muted); font-weight: 500; }
-  .badge { min-width: 46px; text-align: center; font-weight: 800; font-size: 15px; padding: 5px 7px;
-    border-radius: 9px; background: var(--accent); color: #fff; flex: none; }
-
-  /* Prochain départ en grand : ligne, compte à rebours, heure de passage */
-  .hero { display: flex; align-items: center; gap: 12px; }
-  .big { font-size: 46px; font-weight: 800; line-height: .95; letter-spacing: -.03em; color: var(--ok); font-variant-numeric: tabular-nums; }
-  .big small { font-size: 17px; font-weight: 600; letter-spacing: 0; margin-left: 3px; opacity: .8; }
-  .at { margin-left: auto; text-align: right; font-size: 12px; color: var(--muted); line-height: 1.2; }
-  .at b { display: block; font-size: 22px; color: var(--text); font-variant-numeric: tabular-nums; }
-  .hero.urgent .big, .hero.urgent .at em { color: var(--warn); }
-  .at em { font-style: normal; font-weight: 700; }
-
-  /* Jauge : se remplit à mesure que le bus approche (sur 20 min) */
-  .meter { height: 5px; border-radius: 5px; background: var(--line); margin: 12px 0; overflow: hidden; }
-  .meter i { display: block; height: 100%; border-radius: 5px; background: var(--ok); transition: width .6s; }
-  .hero.urgent + .meter i { background: var(--warn); }
-
-  /* Départs suivants, toutes lignes confondues, dans l'ordre */
-  .next { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .nx { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 14px; background: var(--card2); }
-  .nx .badge { font-size: 11px; min-width: 34px; padding: 2px 5px; border-radius: 6px; }
-  .nx b { font-size: 20px; font-variant-numeric: tabular-nums; }
-  .nx b small { font-size: 12px; font-weight: 600; color: var(--muted); }
-  .nx span { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  /* Carte d'étape avec tableau des départs */
+  #main { min-height: 80vh; }
+  #board { transition: transform .2s ease, opacity .2s ease; touch-action: pan-y; }
+  #board.out-left { transform: translateX(-30px); opacity: 0; }
+  #board.out-right { transform: translateX(30px); opacity: 0; }
+  .card { background: var(--card); border-radius: 16px; padding: 12px 14px; margin-bottom: 12px; }
+  .leg-title { font-weight: 700; font-size: 16px; line-height: 1.25; margin-bottom: 8px; }
+  .leg-title .n { color: var(--muted); margin-right: 4px; }
+  .leg-title .to { color: var(--muted); font-weight: 500; }
+  .badge { display: inline-block; min-width: 46px; text-align: center; font-weight: 800; font-size: 14px; padding: 4px 7px;
+    border-radius: 8px; background: var(--accent); color: #fff; }
+  /* Une ligne par bus : pastille à gauche, ses 2 prochains passages alignés à droite */
+  .line { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .line:first-of-type { border-top: 0; }
+  .pair { display: flex; gap: 18px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .pair div { text-align: center; min-width: 58px; }
+  .pair b { display: block; font-size: 22px; line-height: 1.1; color: var(--ok); }
+  .pair b.soon { color: var(--warn); }
+  .pair b small { font-size: 12px; font-weight: 600; margin-left: 2px; }
+  .pair span { font-size: 12px; color: var(--muted); }
   .err { color: var(--warn); font-size: 14px; }
   .empty { color: var(--muted); font-size: 14px; }
   .legend { margin-top: 4px; text-align: center; }
@@ -105,16 +93,15 @@
   <div class="topbar">
     <div class="topbar-row">
       <h1>Mes bus</h1>
-      <span class="clock" id="clock">--:--</span>
+      <div class="tabs" id="tabs"></div>
       <button class="round" id="settingsBtn" aria-label="Réglages">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
       </button>
     </div>
-    <div class="tabs" id="tabs"></div>
-    <div class="status sub"><span class="dot" id="dot"></span><span id="updated">Chargement…</span></div>
+    <div class="status sub"><span><span class="dot" id="dot"></span><span id="updated">Chargement…</span></span><span class="clock" id="clock">--:--</span></div>
   </div>
   <div id="board"></div>
-  <p class="sub legend">Temps réel uniquement · actualisation auto toutes les 15 s</p>
+  <p class="sub legend">Actualisation auto toutes les 15 s · balaie pour changer de trajet</p>
 </section>
 
 <!-- ===== Réglages ===== -->
@@ -150,14 +137,13 @@
 <script>
 const API = "https://download.data.grandlyon.com/ws/rdata";
 const REFRESH_MS = 15000;
-const NEXT_COUNT = 3;   // départs affichés après le prochain
+const PER_LINE = 2;     // passages affichés par ligne de bus
 const URGENT_MIN = 3;   // en dessous : compte à rebours en orange
 const SECTIONS = [
   { id: "Aller", color: "var(--aller)" },
   { id: "Retour", color: "var(--retour)" },
   { id: "Autre", color: "var(--autre)" },
 ];
-const sectionColor = id => (SECTIONS.find(s => s.id === id) || SECTIONS[2]).color;
 
 // ---------- Stockage local ----------
 function load(key, fallback) {
@@ -235,38 +221,54 @@ function renderTabs() {
   $("tabs").innerHTML = tabs.map(t =>
     `<button class="tab ${t.id === currentTab ? "on" : ""}" style="--c:${t.color}" data-tab="${t.id}">${t.id}</button>`).join("");
 }
+function switchTab(id, dir) {
+  if (!id || id === currentTab) return;
+  currentTab = id;
+  renderTabs();
+  const board = $("board");
+  board.classList.add(dir > 0 ? "out-left" : "out-right");
+  setTimeout(() => { drawBoard(); board.classList.remove("out-left", "out-right"); }, 150);
+}
+const visibleTabs = () => [...$("tabs").querySelectorAll("[data-tab]")].map(b => b.dataset.tab);
 $("tabs").addEventListener("click", e => {
   const b = e.target.closest("[data-tab]"); if (!b) return;
-  currentTab = b.dataset.tab;
-  renderTabs(); drawBoard();
+  const t = visibleTabs();
+  switchTab(b.dataset.tab, t.indexOf(b.dataset.tab) - t.indexOf(currentTab));
 });
 
-// Prochain bus en grand, puis les suivants toutes lignes confondues (ils vont au même endroit)
+// Balayage horizontal : vers la gauche = onglet suivant, vers la droite = onglet précédent
+let touch = null;
+$("main").addEventListener("touchstart", e => { const t = e.touches[0]; touch = { x: t.clientX, y: t.clientY }; }, { passive: true });
+$("main").addEventListener("touchend", e => {
+  if (!touch) return;
+  const t = e.changedTouches[0], dx = t.clientX - touch.x, dy = t.clientY - touch.y;
+  touch = null;
+  if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  const tabs = visibleTabs(), i = tabs.indexOf(currentTab), dir = dx < 0 ? 1 : -1;
+  switchTab(tabs[i + dir], dir);
+});
+
+// Une ligne par bus avec ses 2 prochains passages en temps réel ; la ligne qui passe le plus tôt en premier
+function passage(p) {
+  const m = Math.max(0, minutesUntil(p.heurepassage));
+  const big = m === 0 ? "Proche" : `${m}<small>min</small>`;
+  return `<div><b class="${m <= URGENT_MIN ? "soon" : ""}">${big}</b><span>${clockOf(p.heurepassage)}</span></div>`;
+}
+
 function legBody(f, r) {
   if (!r) return `<div class="empty">Chargement…</div>`;
   if (r.e) return `<div class="err">${esc(r.e.message)}</div>`;
   // Seulement les passages suivis en temps réel (type "E"), pas les horaires théoriques
-  const deps = r.v
+  const byLine = {};
+  r.v
     .filter(p => p.type === "E" && minutesUntil(p.heurepassage) > -1)
     .filter(p => !f.choix?.length || f.choix.includes(p.ligne))
-    .sort((a, b) => a.heurepassage.localeCompare(b.heurepassage));
-  if (!deps.length) return `<div class="empty">Aucun bus en approche pour l'instant</div>`;
-
-  const [first, ...rest] = deps;
-  const m = minutesUntil(first.heurepassage);
-  const urgent = m <= URGENT_MIN;
-  const fill = Math.max(6, Math.min(100, 100 - m * 5));
-  const big = m <= 0 ? "Proche" : `${m}<small>min</small>`;
-  return `
-    <div class="hero ${urgent ? "urgent" : ""}">
-      <span class="badge">${esc(first.ligne)}</span>
-      <span class="big">${big}</span>
-      <span class="at">${urgent ? "<em>Dépêche-toi</em>" : "passage"}<b>${clockOf(first.heurepassage)}</b></span>
-    </div>
-    <div class="meter"><i style="width:${fill}%"></i></div>
-    ${rest.length ? `<div class="next">${rest.slice(0, NEXT_COUNT).map(p => `
-      <div class="nx"><span class="badge">${esc(p.ligne)}</span><b>${Math.max(0, minutesUntil(p.heurepassage))}<small> min</small></b><span>${clockOf(p.heurepassage)}</span></div>`).join("")}
-    </div>` : ""}`;
+    .sort((a, b) => a.heurepassage.localeCompare(b.heurepassage))
+    .forEach(p => (byLine[p.ligne] ||= []).push(p));
+  const lines = Object.entries(byLine).sort((a, b) => a[1][0].heurepassage.localeCompare(b[1][0].heurepassage));
+  if (!lines.length) return `<div class="empty">Aucun bus en approche pour l'instant</div>`;
+  return lines.map(([ligne, ps]) => `<div class="line"><span class="badge">${esc(ligne)}</span>
+    <div class="pair">${ps.slice(0, PER_LINE).map(passage).join("")}</div></div>`).join("");
 }
 
 // Dernières données reçues, redessinées toutes les 5 s pour que les minutes restent justes entre deux appels
@@ -282,16 +284,14 @@ function drawBoard() {
     board.innerHTML = `<div class="card empty">Aucun arrêt. Ajoute-en dans les réglages.</div>`;
     return;
   }
-  const color = sectionColor(currentTab);
   let step = 0;
   board.innerHTML = favs.map((f, i) => {
     if (f.section !== currentTab) return "";
     step++;
     const [from, to] = f.nom.split(" → ");
-    return `<div class="card leg" style="--c:${color}">
-      <div class="leg-head"><span class="step">${step}</span>
-        <div class="leg-title">${esc(from)}${to ? ` <span>→ ${esc(to)}</span>` : ""}</div>
-      </div>${legBody(f, lastResults?.[i])}</div>`;
+    return `<div class="card">
+      <div class="leg-title"><span class="n">${step}</span>${esc(from)}${to ? ` <span class="to">→ ${esc(to)}</span>` : ""}</div>
+      ${legBody(f, lastResults?.[i])}</div>`;
   }).join("");
 }
 
